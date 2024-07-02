@@ -23,6 +23,7 @@ function establishConnection() {
         } else {
             console.log('Connected to the database successfully');
             androidClients = new AndroidClients(pool);
+            connection.release();
         }
     });
     app.listen(port, '0.0.0.0', () => {
