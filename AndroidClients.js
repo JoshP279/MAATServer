@@ -3,15 +3,15 @@ class AndroidClients {
     constructor(pool){
         this.pool = pool;
     }
-    async login(username, password) {
-        const query = `SELECT * FROM tempusers WHERE userName = ? AND password = ?`;
+    async login(MarkerEmail, Password) {
+        const query = `SELECT * FROM marker WHERE MarkerEmail = ? AND Password = ?`;
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [username, password], (error, results) => {
+            this.pool.query(query, [MarkerEmail, Password], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
                     if (results.length > 0) {
-                        resolve({ username: results[0].username });
+                        resolve({});
                     } else {
                         resolve(null);
                     }
@@ -26,7 +26,6 @@ class AndroidClients {
                 if (error) {
                     reject(error);
                 } else {
-                    console.log([username]);
                     if (results.length > 0) {
                         const assessments = results.map(result => ({
                             moduleCode: result.ModuleCode,

@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const app = express();
-const port = 3001;
+const port = 3030;
 const AndroidClients = require('./AndroidClients')
 app.use(bodyParser.json());
 const pool = mysql.createPool({
@@ -20,7 +20,6 @@ function establishConnection() {
         if (err) {
             console.error('Error connecting to the database:', err);
         } else {
-            console.clear();
             console.log('Connected to the database successfully');
             androidClients = new AndroidClients(pool);
             connection.release();
@@ -37,12 +36,11 @@ function establishConnection() {
 establishConnection()
 
 app.get('/androidLogin', (req, res) => {
-    const { username, password } = req.query;
-    androidClients.login(username, password)
+    const { MarkerEmail, Password } = req.query;
+    androidClients.login(MarkerEmail, Password)
         .then(loginStatus => {
             if (loginStatus) {
-                console.log(`New Android Login with username = ${username} and password = ${password}`);
-                res.status(200).json({ message: 'Login successful', data: loginStatus });
+                res.status(200).json({ message: 'Login successful'});
             } else {
                 res.status(400).json({ error: 'Invalid username or password' });
             }
