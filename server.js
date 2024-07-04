@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const app = express();
-const port = 3030;
+const port = 3306;
 const AndroidClients = require('./AndroidClients')
 app.use(bodyParser.json());
 const pool = mysql.createPool({
@@ -52,9 +52,6 @@ app.get('/androidLogin', (req, res) => {
 });
 app.get('/assessments', (req, res) => {
     const assessmentLecturer = req.query.AssessmentLecturer;
-    if (!assessmentLecturer) {
-        return res.status(400).json({ error: 'Assessment Lecturer is required' });
-    }
     androidClients.getAssessments(assessmentLecturer)
         .then(assessments => {
             if (assessments) {
@@ -66,5 +63,20 @@ app.get('/assessments', (req, res) => {
         .catch(error => {
             console.error(error);
             res.status(501).json({ error: 'Server Error' });
+        });
+});
+app.get('/submissions', (req, res) => {
+    const assessmentID = req.query.AssessmentID;
+    androidClients.getSubmissions(assessmentID)
+        .then(submissions => {
+            if (assessmentID){
+                res.status(202).json(submissions);
+            }else{
+                res.status(402).json({error: 'No submissions found'});
+            }
+        })
+        .catch(error =>{
+            console.error(error);
+            res.status(502).json({error: 'Server Error'});
         });
 });
