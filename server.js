@@ -34,7 +34,6 @@ function establishConnection() {
     });    
 }
 establishConnection()
-
 app.get('/androidLogin', (req, res) => {
     const { MarkerEmail, Password } = req.query;
     androidClients.login(MarkerEmail, Password)
@@ -79,4 +78,15 @@ app.get('/submissions', (req, res) => {
             console.error(error);
             res.status(502).json({error: 'Server Error'});
         });
+});
+app.put('/updateSubmission', (req,res) => {
+    const {submissionID, submissionStatus} = req.body;
+    const query = 'UPDATE submission SET SubmissionStatus = ? WHERE SubmissionID = ?';
+    pool.query(query, [submissionStatus,submissionID], (error, results) => {
+        if (error) {
+            res.status(503).json({ error: 'Failed to update submission status' });
+        } else {
+            res.status(202).json({ message: 'Submission status updated successfully' });
+        }
+    });
 });
