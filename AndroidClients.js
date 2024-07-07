@@ -20,10 +20,10 @@
                 });
             });
         }
-        async getAssessments(username) {
-            const query = `SELECT AssessmentID,ModuleCode, AssessmentName, AssessmentLecturer, NumSubmissionsMarked, TotalNumSubmissions FROM assessment WHERE AssessmentLecturer = ?`;
+        async getAssessments(MarkerEmail) {
+            const query = `SELECT AssessmentID,ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions FROM assessment WHERE MarkerEmail = ?`;
             return new Promise((resolve, reject) => {
-                this.pool.query(query, [username], (error, results) => {
+                this.pool.query(query, [MarkerEmail], (error, results) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -32,7 +32,6 @@
                                 assessmentID: result.AssessmentID,
                                 moduleCode: result.ModuleCode,
                                 assessmentName: result.AssessmentName,
-                                assessmentLecturer: result.AssessmentLecturer,
                                 numMarked: result.NumSubmissionsMarked,
                                 totalSubmissions: result.TotalNumSubmissions
                             }));

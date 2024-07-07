@@ -50,8 +50,8 @@ app.get('/androidLogin', (req, res) => {
         });
 });
 app.get('/assessments', (req, res) => {
-    const assessmentLecturer = req.query.AssessmentLecturer;
-    androidClients.getAssessments(assessmentLecturer)
+    const MarkerEmail = req.query.MarkerEmail;
+    androidClients.getAssessments(MarkerEmail)
         .then(assessments => {
             if (assessments) {
                 res.status(201).json(assessments);
