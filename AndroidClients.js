@@ -44,7 +44,7 @@
             });
         }
         async getSubmissions(AssessmentID){
-            const query = 'SELECT SubmissionID,StudentNum, StudentName, StudentSurname, SubmissionStatus FROM submission WHERE AssessmentID = ?';
+            const query = 'SELECT AssessmentID, SubmissionID,StudentNum, StudentName, StudentSurname, SubmissionStatus FROM submission WHERE AssessmentID = ?';
             return new Promise((resolve, reject) => {
                 this.pool.query(query,[AssessmentID], (error,results) => {
                 if (error){
@@ -53,6 +53,7 @@
                     if (results.length > 0){
                         const submissions = results.map(result => ({
                             submissionID: result.SubmissionID,
+                            assessmentID: result.AssessmentID,
                             studentNumber: result.StudentNum,
                             studentName: result.StudentName,
                             studentSurname: result.StudentSurname,
@@ -60,6 +61,38 @@
                         }));
                         resolve(submissions);
                     }else{
+                        resolve(null);
+                    }
+                }
+            });
+        });
+    }
+    async getSubmissionPDF(submissionID) {
+        const query = 'SELECT SubmissionPDF FROM submission WHERE SubmissionID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [submissionID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        resolve(results[0].SubmissionPDF);
+                    } else {
+                        resolve(null);
+                    }
+                }
+            });
+        });
+    }
+    async getMemoPDF(assessmentID) {
+        const query = 'SELECT Memorandum FROM assessment WHERE AssessmentID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [assessmentID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        resolve(results[0].Memorandum);
+                    } else {
                         resolve(null);
                     }
                 }
