@@ -1,6 +1,4 @@
-    const axios = require('axios');
-    const { query } = require('express');
-    class AndroidClients {
+    class ClientThreads {
         constructor(pool){
             this.pool = pool;
         }
@@ -20,6 +18,7 @@
                 });
             });
         }
+
         async getAssessments(MarkerEmail) {
             const query = `SELECT AssessmentID,ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions FROM assessment WHERE MarkerEmail = ?`;
             return new Promise((resolve, reject) => {
@@ -43,6 +42,7 @@
                 });
             });
         }
+
         async getSubmissions(AssessmentID){
             const query = 'SELECT AssessmentID, SubmissionID,StudentNum, StudentName, StudentSurname, SubmissionStatus FROM submission WHERE AssessmentID = ?';
             return new Promise((resolve, reject) => {
@@ -67,6 +67,7 @@
             });
         });
     }
+
     async getSubmissionPDF(submissionID) {
         const query = 'SELECT SubmissionPDF FROM submission WHERE SubmissionID = ?';
         return new Promise((resolve, reject) => {
@@ -83,6 +84,7 @@
             });
         });
     }
+
     async getMemoPDF(assessmentID) {
         const query = 'SELECT Memorandum FROM assessment WHERE AssessmentID = ?';
         return new Promise((resolve, reject) => {
@@ -99,5 +101,105 @@
             });
         });
     }
+
+    async getModules(){
+        const query = 'SELECT DISTINCT ModuleCode FROM assessment';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        const modules = results.map(result => ({ ModuleCode: result.ModuleCode}));
+                        resolve(modules);
+                    } else {
+                        resolve(null);
+                    }
+                }
+            });
+        });
+    }
+
+    async getLecturers(){
+        const query = 'SELECT DISTINCT MarkerEmail FROM assessment';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        const modules = results.map(result => ({ MarkerEmail: result.MarkerEmail}));
+                        resolve(modules);
+                    } else {
+                        resolve(null);
+                    }
+                }
+            });
+        });
+    }
+
+    async getModerators(){
+        const query = 'SELECT DISTINCT ModEmail FROM assessment';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        const moderators = results.map(result => ({ ModEmail: result.ModEmail}));
+                        resolve(moderators);
+                    } else {
+                        resolve(null);
+                    }
+                }
+            });
+        });
+    }
+    
+    async getMarkers(){
+        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        const markers = results.map(result => ({
+                            MarkerEmail: result.MarkerEmail,
+                            Name: result.Name,
+                            Surname: result.Surname
+                        }));
+                        resolve(markers);
+                    } else {
+                        resolve(null);
+                    }
+                }
+            });
+        });
+    }
+    async addAssessment(MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
+        const query = 'INSERT INTO assessment (MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions) VALUES (?,?,?,?,?,?,?,?)';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results.insertId);
+                }
+            });
+        });
+    }
+    async addSubmission(AssessmentID, SubmissionPDF,StudentNum, StudentName, StudentSurname, SubmissionStatus){
+        const query = 'INSERT INTO submission (AssessmentID, SubmissionPDF, StudentNum, StudentName, StudentSurname, SubmissionStatus) VALUES (?,?,?,?,?,?)';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [AssessmentID, SubmissionPDF,StudentNum, StudentName, StudentSurname, SubmissionStatus], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results.insertId);
+                }
+            });
+        });
+    }
 }
-module.exports = AndroidClients
+module.exports = ClientThreads
