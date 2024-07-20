@@ -137,4 +137,19 @@ router.put('/addSubmission', (req, res) => {
             res.status(500).json({ error: 'Server Error' });
         });
 });
+router.get('/markedSubmission', (req, res) => {
+    const submissionID = req.query.SubmissionID;
+    clients.getMarkedSubmission(submissionID)
+    .then(pdfData => {
+        if (pdfData) {
+            res.status(200).json({ pdfData });
+        } else {
+            res.status(404).json({ error: 'Submission PDF not found' });
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        res.status(500).json({ error: 'Server Error' });
+    });
+});
 module.exports = { router, setClientsAndPool };

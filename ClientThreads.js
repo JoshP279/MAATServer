@@ -44,7 +44,7 @@
         }
 
         async getSubmissions(AssessmentID){
-            const query = 'SELECT AssessmentID, SubmissionID,StudentNum, StudentName, StudentSurname, SubmissionStatus FROM submission WHERE AssessmentID = ?';
+            const query = 'SELECT AssessmentID, SubmissionID,StudentNum, SubmissionMark,StudentName, StudentSurname, SubmissionStatus FROM submission WHERE AssessmentID = ?';
             return new Promise((resolve, reject) => {
                 this.pool.query(query,[AssessmentID], (error,results) => {
                 if (error){
@@ -55,9 +55,10 @@
                             submissionID: result.SubmissionID,
                             assessmentID: result.AssessmentID,
                             studentNumber: result.StudentNum,
+                            submissionMark: result.SubmissionMark,
                             studentName: result.StudentName,
                             studentSurname: result.StudentSurname,
-                            submissionStatus: result.SubmissionStatus
+                            submissionStatus: result.SubmissionStatus,
                         }));
                         resolve(submissions);
                     }else{
@@ -103,14 +104,14 @@
     }
 
     async getModules(){
-        const query = 'SELECT DISTINCT ModuleCode FROM assessment';
+        const query = 'SELECT ModuleName, ModuleCode FROM module';
         return new Promise((resolve, reject) => {
             this.pool.query(query, (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
                     if (results.length > 0) {
-                        const modules = results.map(result => ({ ModuleCode: result.ModuleCode}));
+                        const modules = results.map(result => ({ ModuleCode: result.ModuleCode, ModuleName: result.ModuleName }));
                         resolve(modules);
                     } else {
                         resolve(null);
@@ -121,7 +122,7 @@
     }
 
     async getLecturers(){
-        const query = 'SELECT DISTINCT MarkerEmail FROM assessment';
+        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker WHERE  MarkerRole <> "Demi"';
         return new Promise((resolve, reject) => {
             this.pool.query(query, (error, results) => {
                 if (error) {
@@ -139,14 +140,14 @@
     }
 
     async getModerators(){
-        const query = 'SELECT DISTINCT ModEmail FROM assessment';
+        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker WHERE MarkerRole <> "Demi"';
         return new Promise((resolve, reject) => {
             this.pool.query(query, (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
                     if (results.length > 0) {
-                        const moderators = results.map(result => ({ ModEmail: result.ModEmail}));
+                        const moderators = results.map(result => ({ ModEmail: result.MarkerEmail}));
                         resolve(moderators);
                     } else {
                         resolve(null);
@@ -189,6 +190,30 @@
             });
         });
     }
+    async editAssessment(AssessmentID, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
+        console.log(ModEmail);
+        const query = `UPDATE assessment 
+                       SET MarkerEmail = ?, 
+                           AssessmentName = ?, 
+                           ModuleCode = ?, 
+                           Memorandum = ?, 
+                           ModEmail = ?, 
+                           TotalMark = ?, 
+                           NumSubmissionsMarked = ?, 
+                           TotalNumSubmissions = ? 
+                       WHERE AssessmentID = ?`;
+    
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    }
+    
     async addSubmission(AssessmentID, SubmissionPDF,StudentNum, StudentName, StudentSurname, SubmissionStatus){
         const query = 'INSERT INTO submission (AssessmentID, SubmissionPDF, StudentNum, StudentName, StudentSurname, SubmissionStatus) VALUES (?,?,?,?,?,?)';
         return new Promise((resolve, reject) => {
@@ -197,6 +222,23 @@
                     reject(error);
                 } else {
                     resolve(results.insertId);
+                }
+            });
+        });
+    }
+    async getMarkedSubmission(submissionID) {
+        const query = 'SELECT MarkedSubmissionPDF FROM submission WHERE SubmissionID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [submissionID], (error, results) => {
+                if (error) {
+                    console.log('dfa');
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        resolve(results[0].MarkedSubmissionPDF);
+                    } else {
+                        resolve(null);
+                    }
                 }
             });
         });

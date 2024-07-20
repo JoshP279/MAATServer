@@ -37,6 +37,23 @@ router.put('/addAssessment', (req, res) => {
             res.status(500).json({ error: 'Server Error' });
         });
     });
+router.put('/editAssessment', (req, res) => {
+    const assessmentInfo = req.body;
+    const memoObject = assessmentInfo.Memorandum;
+    const memoBuffer = Buffer.from(Object.values(memoObject));
+    clients.editAssessment(assessmentInfo.AssessmentID, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, memoBuffer, assessmentInfo.ModEmail, assessmentInfo.TotalMark, assessmentInfo.NumSubmissionsMarked, assessmentInfo.TotalNumSubmissions)
+        .then(resultId => {
+            if (resultId) {
+                res.status(200).json({ message: 'Assessment edited successfully'});
+            } else {
+                res.status(404).json({ error: 'No assessments found' });
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+    });
 router.get('/assessments', (req, res) => {
     const MarkerEmail = req.query.MarkerEmail;
     clients.getAssessments(MarkerEmail)
@@ -52,20 +69,7 @@ router.get('/assessments', (req, res) => {
             res.status(500).json({ error: 'Server Error' });
         });
     });
-router.get('/modules', (req, res) => {
-    clients.getModules()
-        .then(modules => {
-            if (modules) {
-                res.status(200).json(modules);
-            } else {
-                res.status(404).json({ error: 'No modules found' });
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            res.status(500).json({ error: 'Server Error' });
-        });
-    });
+
 router.get('/lecturers', (req, res) => {
     clients.getLecturers()
         .then(lecturers => {
