@@ -20,9 +20,9 @@
         }
 
         async getAssessments(MarkerEmail) {
-            const query = `SELECT AssessmentID,ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions FROM assessment WHERE MarkerEmail = ?`;
+            const query = `SELECT AssessmentID,ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions FROM assessment WHERE MarkerEmail = ? OR LecturerEmail = ?`;
             return new Promise((resolve, reject) => {
-                this.pool.query(query, [MarkerEmail], (error, results) => {
+                this.pool.query(query, [MarkerEmail,MarkerEmail], (error, results) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -178,10 +178,10 @@
             });
         });
     }
-    async addAssessment(MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
-        const query = 'INSERT INTO assessment (MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions) VALUES (?,?,?,?,?,?,?,?)';
+    async addAssessment(LecturerEmail, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
+        const query = 'INSERT INTO assessment (LecturerEmail, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions) VALUES (?,?,?,?,?,?,?,?,?)';
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions], (error, results) => {
+            this.pool.query(query, [LecturerEmail,MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -191,7 +191,6 @@
         });
     }
     async editAssessment(AssessmentID, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
-        console.log(ModEmail);
         const query = `UPDATE assessment 
                        SET MarkerEmail = ?, 
                            AssessmentName = ?, 
