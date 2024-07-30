@@ -187,7 +187,7 @@ class ClientThreads {
      * @returns {Promise<Object[]|null>} - A list of moderators or null if none are found.
      */
     async getModerators(){
-        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker WHERE MarkerRole <> "Demi"';
+        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker WHERE MarkerRole <> "Demi" AND MarkerRole <> "Admin"';
         return new Promise((resolve, reject) => {
             this.pool.query(query, (error, results) => {
                 if (error) {
@@ -209,7 +209,7 @@ class ClientThreads {
      * @returns {Promise<Object[]|null>} - A list of markers or null if none are found.
      */
     async getMarkers(){
-        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker';
+        const query = 'SELECT DISTINCT MarkerEmail, Name, Surname FROM marker WHERE MarkerRole <> "Admin"';
         return new Promise((resolve, reject) => {
             this.pool.query(query, (error, results) => {
                 if (error) {
