@@ -80,7 +80,7 @@ establishConnection();
 
 // Middleware to log incoming requests
 app.use((req, res, next) => {
-    console.log(`Incoming request: ${req.method} ${req.url}`);
+    console.log(`${req.method} ${req.url}`);
     next();
 });
 
