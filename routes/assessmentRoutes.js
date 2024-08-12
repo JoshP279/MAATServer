@@ -110,7 +110,42 @@ router.get('/assessments', (req, res) => {
         });
     });
 
+    /**
+     * Route to get all assessments.
+     * @returns {json} 200 - List of all assessments.
+     * @returns {json} 404 - If no assessments are found.
+     * @returns {json} 500 - On server error.
+     */
+router.get('/allAssessments', (req, res) => {
+    clients.getAllAssessments()
+        .then(assessments => {
+            if (assessments) {
+                res.status(200).json(assessments);
+            } else {
+                res.status(404).json({ error: 'No assessments found' });
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+    });
 
-
-
+router.delete('/deleteAssessment', (req, res) => {
+    const { AssessmentID } = req.query;
+    console.log(AssessmentID);
+    clients.deleteAssessment(AssessmentID)
+        .then(result => {
+            if (result) {
+                res.status(200).json({ message: 'Assessment deleted successfully' });
+            } else {
+                res.status(404).json({ error: 'No assessments found' });
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+    }
+);
 module.exports = {router,setClients};

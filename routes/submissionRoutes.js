@@ -192,7 +192,7 @@ router.put('/addSubmission', (req, res) => {
     const submissionInfo = req.body;
     const submissionObject = submissionInfo.SubmissionPDF;
     const submissionBuffer = Buffer.from(Object.values(submissionObject));
-    clients.addSubmission(submissionInfo.AssessmentID, submissionBuffer,submissionInfo.StudentNum, submissionInfo.StudentName, submissionInfo.StudentSurname,submissionInfo.SubmissionStatus)
+    clients.addSubmission(submissionInfo.AssessmentID, submissionBuffer,submissionInfo.StudentNum, submissionInfo.StudentName, submissionInfo.StudentSurname,submissionInfo.SubmissionStatus, submissionInfo.SubmissionFolderName)
         .then(resultId => {
             if (resultId) {
                 updateAssessment(resultId);

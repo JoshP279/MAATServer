@@ -86,9 +86,11 @@ app.use((req, res, next) => {
 
 // Route definitions for assessment operations
 app.get('/assessments', assessmentRoutes.router);
+app.get('/allAssessments', assessmentRoutes.router);
 app.get('/memoPDF', assessmentRoutes.router);   
 app.put('/addAssessment', assessmentRoutes.router);
 app.put('/editAssessment', assessmentRoutes.router);
+app.delete('/deleteAssessment', assessmentRoutes.router);
 
 // Route definitions for submission operations
 app.get('/submissionPDF', submissionRoutes.router);
@@ -103,9 +105,18 @@ app.get('/login', markerRoutes.router);
 app.get('/lecturers', markerRoutes.router);
 app.get('/moderators', markerRoutes.router);
 app.get('/markers', markerRoutes.router);
+app.get('/demiMarkers', markerRoutes.router);
+app.put('/editMarker', markerRoutes.router);
+app.put('/addDemiMarker', markerRoutes.router);
+app.put('/addLecturer', markerRoutes.router);
+app.delete('/deleteMarker', markerRoutes.router);
+app.put('/editLecturer', markerRoutes.router);
 
 // Route definitions for module operations
 app.get('/modules', moduleRoutes.router);
+app.put('/addModule', moduleRoutes.router);
+app.delete('/deleteModule', moduleRoutes.router);
+app.put('/editModule', moduleRoutes.router);
 
 // Route for sending emails to students
 app.post('/sendStudentEmail', (req, res) => {
