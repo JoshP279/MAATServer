@@ -1,8 +1,10 @@
 const express = require('express');
+const { spawn } = require('child_process');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { file } = require('jszip');
 const projectRoot = process.cwd();
 const uploadsDir = path.join(projectRoot, 'uploads');
 const storage = multer.memoryStorage();
@@ -135,15 +137,34 @@ router.put('/uploadMarkedSubmission', upload.single('pdfFile'), (req, res) => {
     const filePath = path.join(uploadsDir, `submission_${submissionID}.pdf`);
     fs.writeFile(filePath, pdfBuffer, (err) => {
         if (err) {
-            console.error('Failed to save PDF:', err);
+            console.log('Failed to save PDF:', err);
             return res.status(500).json({ error: 'Failed to save PDF' });
         }
         const query = 'UPDATE submission SET MarkedSubmissionPDF = ? WHERE SubmissionID = ?';
         pool.query(query, [pdfBuffer, submissionID], (error, results) => {
             if (error) {
-                console.error('Database query error:', error);
+                console.log('Database query error:', error);
                 return res.status(500).json({ error: 'Failed to upload PDF to database' });
             } else {
+                const scriptPath = 'C:\\Users\\Joshua\\MarkingSymbolRecognition\\main.py'; 
+                console.log(filePath);
+                const pythonProcess = spawn('python', [scriptPath, filePath, submissionID]);
+
+                pythonProcess.stdout.on('data', (data) => {
+                    console.log(`Script output: ${data}`);
+                });
+
+                pythonProcess.stderr.on('data', (data) => {
+                    console.error(`Script error: ${data}`);
+                });
+
+                pythonProcess.on('close', (code) => {
+                    if (code === 0) {
+                        console.log('Script executed successfully.');
+                    } else {
+                        console.error(`Script exited with code ${code}`);
+                    }
+                });
                 return res.status(200).json({
                     message: 'File uploaded and database updated successfully',
                     submissionID,
