@@ -46,7 +46,7 @@ router.put('/addAssessment', (req, res) => {
     const assessmentInfo = req.body;
     const memoObject = assessmentInfo.Memorandum;
     const memoBuffer = Buffer.from(Object.values(memoObject));
-    clients.addAssessment(assessmentInfo.LecturerEmail, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, memoBuffer, assessmentInfo.ModEmail, assessmentInfo.TotalMark, assessmentInfo.NumSubmissionsMarked, assessmentInfo.TotalNumSubmissions)
+    clients.addAssessment(assessmentInfo.LecturerEmail, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, memoBuffer, assessmentInfo.ModEmail, assessmentInfo.TotalMark, assessmentInfo.NumSubmissionsMarked, assessmentInfo.TotalNumSubmissions, assessmentInfo.AssessmentType)
         .then(resultId => {
             if (resultId) {
                 res.status(200).json({ message: 'Assessment added successfully', assessmentID: resultId });
@@ -73,8 +73,8 @@ router.put('/editAssessment', (req, res) => {
     const memoObject = assessmentInfo.Memorandum;
     const memoBuffer = Buffer.from(Object.values(memoObject));
     clients.editAssessment(assessmentInfo.AssessmentID, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, memoBuffer, assessmentInfo.ModEmail, assessmentInfo.TotalMark, assessmentInfo.NumSubmissionsMarked, assessmentInfo.TotalNumSubmissions)
-        .then(resultId => {
-            if (resultId) {
+        .then(results => {
+            if (results) {
                 res.status(200).json({ message: 'Assessment edited successfully'});
             } else {
                 res.status(404).json({ error: 'No assessments found' });

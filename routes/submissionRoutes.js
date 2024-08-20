@@ -33,7 +33,7 @@ function setClientsAndPool(clientInstance, poolInstance) {
  * @param {Int} submissionID  - ID of the submission
  * @returns true if the query was successful, false otherwise
  */
-function updateAssessment(submissionID){
+function updateAssessment(submissionID) {
     const updateAssessmentQuery = `
     UPDATE assessment
     SET TotalNumSubmissions = (
@@ -48,15 +48,18 @@ function updateAssessment(submissionID){
     )
     WHERE AssessmentID = (
         SELECT AssessmentID FROM submission WHERE SubmissionID = ?
-    )`;
+    );`;
+
     pool.query(updateAssessmentQuery, [submissionID, submissionID, submissionID], (error) => {
         if (error) {
             return false;
         }
         return true;
     });
+
     return true;
 }
+
 
 /**
  * Route to update submission status
@@ -228,6 +231,25 @@ router.put('/addSubmission', (req, res) => {
         });
 });
 
+router.put('/editSubmission', (req, res) => {
+    const submissionInfo = req.body;
+    const submissionObject = submissionInfo.SubmissionPDF;
+    const submissionBuffer = Buffer.from(Object.values(submissionObject));
+    clients.editSubmission(submissionInfo.SubmissionID, submissionBuffer, submissionInfo.StudentNum, submissionInfo.StudentName, submissionInfo.StudentSurname, submissionInfo.SubmissionStatus, submissionInfo.SubmissionFolderName)
+        .then(results => {
+            if (results) {
+                console.log(submissionInfo.SubmissionID);
+                updateAssessment(submissionInfo.SubmissionID);
+                res.status(200).json({ message: 'Submission edited successfully'});
+            } else {
+                res.status(404).json({ error: 'Failed to edit submission' });
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+});
 /**
  * Route to get a marked submission PDF
  * GET /markedSubmission

@@ -41,7 +41,7 @@ class ClientThreads {
      */
     async getAssessments(MarkerEmail) {
         const query = `
-            SELECT AssessmentID, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail 
+            SELECT AssessmentID, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail, AssessmentType 
             FROM assessment 
             WHERE 
                 MarkerEmail LIKE CONCAT('%"', ?, '"%')
@@ -60,7 +60,8 @@ class ClientThreads {
                             assessmentName: result.AssessmentName,
                             numMarked: result.NumSubmissionsMarked,
                             totalSubmissions: result.TotalNumSubmissions,
-                            modEmail: result.ModEmail
+                            modEmail: result.ModEmail,
+                            assessmentType: result.AssessmentType
                         }));
                         resolve(assessments);
                     } else {
@@ -319,16 +320,15 @@ class ClientThreads {
      * @param {Int} TotalNumSubmissions - The total number of submissions.
      * @returns {Promise<Int>} - The ID of the newly added assessment.
      */
-    async addAssessment(LecturerEmail, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions) {
+    async addAssessment(LecturerEmail, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentType) {
         const markerEmailString = JSON.stringify(MarkerEmail);
-        console.log(markerEmailString)
         const query = `
             INSERT INTO assessment (
-                LecturerEmail, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                LecturerEmail, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentType
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [LecturerEmail,markerEmailString , AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions], (error, results) => {
+            this.pool.query(query, [LecturerEmail,markerEmailString , AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentType], (error, results) => {
                 if (error) {
                     console.log(error);
                     reject(error);
@@ -353,6 +353,7 @@ class ClientThreads {
      * @returns {Promise<Object>} - The result of the update operation.
      */
     async editAssessment(AssessmentID, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
+        const markerEmailString = JSON.stringify(MarkerEmail);
         const query = `UPDATE assessment 
                         SET MarkerEmail = ?, 
                             AssessmentName = ?, 
@@ -365,10 +366,11 @@ class ClientThreads {
                         WHERE AssessmentID = ?`;
 
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentID], (error, results) => {
+            this.pool.query(query, [markerEmailString, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentID], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
+                    console.log('assessment edited');
                     resolve(results);
                 }
             });
@@ -398,6 +400,41 @@ class ClientThreads {
         });
     }
 
+    /**
+     * Edit a submission to the database.
+     * @param {Int} AssessmentID - The ID of the assessment.
+     * @param {Buffer} SubmissionPDF - The submission PDF data as a buffer.
+     * @param {String} StudentNum - The student number.
+     * @param {String} StudentName - The student's first name.
+     * @param {String} StudentSurname - The student's last name.
+     * @param {String} SubmissionStatus - The status of the submission.
+     * @returns {Promise<Int>} - The ID of the newly added submission.
+     */
+    async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, StudentSurname, SubmissionStatus, SubmissionFolderName) {
+        const query = `
+            UPDATE submission 
+            SET 
+                SubmissionPDF = ?, 
+                StudentName = ?, 
+                StudentSurname = ?, 
+                SubmissionStatus = ?, 
+                SubmissionFolderName = ?
+            WHERE 
+                AssessmentID = ? 
+                AND StudentNum = ?;
+        `;
+        
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [SubmissionPDF, StudentName, StudentSurname, SubmissionStatus, SubmissionFolderName, AssessmentID, StudentNum], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    }
+    
     /**
      * Retrieves the marked submission PDF for a given submission.
      * @param {Int} submissionID - The ID of the submission.
