@@ -434,7 +434,19 @@ class ClientThreads {
             });
         });
     }
-    
+    async updateSubmission(SubmissionID, StudentNum, StudentSurname, SubmissionMark){{
+        const query = 'UPDATE submission SET StudentName = ?, StudentSurname = ?, SubmissionMark = ? WHERE SubmissionID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [StudentNum, StudentSurname, SubmissionMark, SubmissionID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    }
+}
     /**
      * Retrieves the marked submission PDF for a given submission.
      * @param {Int} submissionID - The ID of the submission.
@@ -630,6 +642,13 @@ class ClientThreads {
             });
         });
     }
+    /**
+     * Method to delete an assessment
+     * First attempts to delete all submissions, then proceeds to delete an assessment
+     * @param {int} AssessmentID 
+     * @returns a success message if the assessment is deleted successfully
+     * @returns an error message if the assessment is not found (should never happen, as valid assessments are only loaded)
+     */
     async deleteAssessment(AssessmentID){
         if (!this.deleteSubmissions(AssessmentID)){
             return {error: 'Failed to delete assessment'};
@@ -641,6 +660,23 @@ class ClientThreads {
                     reject(error);
                 } else {
                     resolve({message: 'Assessment deleted successfully'});
+                }
+            });
+        });
+    }
+
+    async getAssessmentInfo(AssessmentID){
+        const query = 'SELECT MarkerEmail, AssessmentName, ModuleCode, ModEmail, TotalMark FROM assessment WHERE AssessmentID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [AssessmentID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    if (results.length > 0) {
+                        resolve(results[0]);
+                    } else {
+                        resolve(null);
+                    }
                 }
             });
         });

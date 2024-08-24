@@ -230,7 +230,42 @@ router.put('/addSubmission', (req, res) => {
             res.status(500).json({ error: 'Server Error' });
         });
 });
+/**
+ * Route to update a submission, specificall the name, surnaame and mark
+ * PUT /updateSubmission
+ * @param {Int} submissionID - ID of the submission
+ * @response {json} 200 - Message if successful
+ * @response {json} 404 - Error message if unsuccessful
+ * @response {json} 500 - Error message if server error
+ */
+router.put('/updateSubmission', (req, res) => {
+    const submissionID = req.body.SubmissionID;
+    const submissionName = req.body.StudentName;
+    const submissionSurname = req.body.StudentSurname;
+    const submissionMark = req.body.SubmissionMark;
+    clients.updateSubmission(submissionID, submissionName, submissionSurname, submissionMark)
+        .then(results => {
+            if (results) {
+                res.status(200).json({ message: 'Submission updated successfully'});
+            } else {
+                res.status(404).json({ error: 'Failed to update submission' });
+            }
+        }
+        )
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+    });
 
+/**
+ * Route to edit a submission, used when updating assessments to by auto parsing the zip file
+ * PUT /editSubmission
+ * @param {form} submissionInfo - Updated submission information
+ * @response {json} 200 - Message if successful
+ * @response {json} 404 - Error message if failed to edit submission
+ * @response {json} 500 - Error message if server error
+ */
 router.put('/editSubmission', (req, res) => {
     const submissionInfo = req.body;
     const submissionObject = submissionInfo.SubmissionPDF;

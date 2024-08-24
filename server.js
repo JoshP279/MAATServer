@@ -91,6 +91,7 @@ app.get('/memoPDF', assessmentRoutes.router);
 app.put('/addAssessment', assessmentRoutes.router);
 app.put('/editAssessment', assessmentRoutes.router);
 app.delete('/deleteAssessment', assessmentRoutes.router);
+app.get('/assessmentInfo', assessmentRoutes.router);
 
 // Route definitions for submission operations
 app.get('/submissionPDF', submissionRoutes.router);
@@ -98,7 +99,7 @@ app.get('/submissions', submissionRoutes.router);
 app.put('/updateSubmissionStatus', submissionRoutes.router);
 app.put('/uploadMarkedSubmission', submissionRoutes.router);
 app.put('/addSubmission', submissionRoutes.router);
-app.put('/editSubmission', submissionRoutes.router);
+app.put('/updateSubmission', submissionRoutes.router);
 app.get('/markedSubmission', submissionRoutes.router);
 
 // Route definitions for marker operations

@@ -146,6 +146,21 @@ router.delete('/deleteAssessment', (req, res) => {
             console.error(error);
             res.status(500).json({ error: 'Server Error' });
         });
-    }
-);
+    });
+
+router.get('/assessmentInfo', (req, res) => {
+    const { AssessmentID } = req.query;
+    clients.getAssessmentInfo(AssessmentID)
+        .then(assessmentInfo => {
+            if (assessmentInfo) {
+                res.status(200).json(assessmentInfo);
+            } else {
+                res.status(404).json({ error: 'No assessments found' });
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+    });
 module.exports = {router,setClients};
