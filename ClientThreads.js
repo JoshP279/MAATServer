@@ -681,5 +681,22 @@ class ClientThreads {
             });
         });
     }
+    /**
+     * Method to update the total submission mark, which is called automatically after a submission is marked
+     * @param {int} SubmissionID 
+     * @param {number}} SubmissionStatus 
+     */
+    async updateSubmissionMark(SubmissionID, SubmissionMark){
+        const query = 'UPDATE submission SET SubmissionMark = ? WHERE SubmissionID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [SubmissionMark, SubmissionID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    }
 }
 module.exports = ClientThreads

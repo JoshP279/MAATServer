@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
 const multer = require('multer');
+const os = require('os');
 
 // Initialise multer for file uploads
 const upload = multer();
@@ -45,6 +46,23 @@ const transporter = nodemailer.createTransport({
         pass: 'vqsz urle arew cdkv'
     }
 });
+/**
+ * Obtain the IP address of Server
+ * @returns the local IP address of the server
+ */
+function getLocalIpAddress() {
+    const interfaces = os.networkInterfaces();
+    for (const interfaceName in interfaces) {
+        const interfaceInfo = interfaces[interfaceName];
+        for (const iface of interfaceInfo) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';  // Default to localhost if no IP address is found
+}
+
 
 let clients;
 /**
@@ -67,7 +85,8 @@ function establishConnection() {
 
     // Start the server
     app.listen(port, '0.0.0.0', () => {
-        console.log(`Server running on postsql.mandela.ac.za:${port}`);
+        const localIp = getLocalIpAddress(); // Get the local IP address
+        console.log(`Server running on http://${localIp}:${port}`);
     });
 
     // Handle uncaught exceptions
@@ -101,6 +120,7 @@ app.put('/uploadMarkedSubmission', submissionRoutes.router);
 app.put('/addSubmission', submissionRoutes.router);
 app.put('/updateSubmission', submissionRoutes.router);
 app.get('/markedSubmission', submissionRoutes.router);
+app.put('/updateSubmissionMark', submissionRoutes.router);
 
 // Route definitions for marker operations
 app.get('/login', markerRoutes.router);
