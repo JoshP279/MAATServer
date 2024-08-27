@@ -330,7 +330,6 @@ class ClientThreads {
         return new Promise((resolve, reject) => {
             this.pool.query(query, [LecturerEmail,markerEmailString , AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentType], (error, results) => {
                 if (error) {
-                    console.log(error);
                     reject(error);
                 } else {
                     resolve(results.insertId);
@@ -457,7 +456,6 @@ class ClientThreads {
         return new Promise((resolve, reject) => {
             this.pool.query(query, [submissionID], (error, results) => {
                 if (error) {
-                    console.log('dfa');
                     reject(error);
                 } else {
                     if (results.length > 0) {
@@ -494,7 +492,6 @@ class ClientThreads {
      * @returns an error message if the module is not found (should never happen, as valid modules are only loaded)
      */
     async deleteModule(ModuleCode){
-        console.log(ModuleCode);
         const query = 'DELETE FROM module WHERE ModuleCode = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [ModuleCode], (error, results) => {
@@ -636,7 +633,6 @@ class ClientThreads {
                 if (error) {
                     return false
                 } else {
-                    console.log('Submissions deleted successfully');
                     return true
                 }
             });

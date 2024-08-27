@@ -60,7 +60,7 @@ function getLocalIpAddress() {
             }
         }
     }
-    return 'localhost';  // Default to localhost if no IP address is found
+    return 'localhost';
 }
 
 

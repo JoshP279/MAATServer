@@ -64,7 +64,6 @@ router.put('/addModule', (req, res) => {
  */
 router.delete('/deleteModule', (req, res) => {
     const { ModuleCode } = req.query;
-    console.log(ModuleCode);
     clients.deleteModule(ModuleCode)
         .then(result => {
             if (result) {
