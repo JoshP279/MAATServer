@@ -132,7 +132,7 @@ router.get('/submissions', (req, res) => {
  * Note that a database limitation is a max packet size of 16 MB, meaning that the PDF file should be less than 16 MB
  */
 router.put('/uploadMarkedSubmission', upload.single('pdfFile'), (req, res) => {
-    const { submissionID } = req.body;
+    const { submissionID, totalMarks, markingStyle } = req.body;
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -145,76 +145,41 @@ router.put('/uploadMarkedSubmission', upload.single('pdfFile'), (req, res) => {
             console.log('Failed to save PDF:', err);
             return res.status(500).json({ error: 'Failed to save PDF' });
         }
+        const queryUpdatePDF = 'UPDATE submission SET MarkedSubmissionPDF = ? WHERE SubmissionID = ?';
+        pool.query(queryUpdatePDF, [pdfBuffer, submissionID], (error, results) => {
+            if (error) {
+                console.log('Database query error:', error);
+                return res.status(500).json({ error: 'Failed to upload PDF to database' });
+            } else {
+                // const scriptPath = "C:\\MarkingSymbolRecognition\\main.py"; honours lab pc
+                const scriptPath = "C:\\Users\\Joshua\\MarkingSymbolRecognition\\main.py"
+                const pythonProcess = spawn('python', [scriptPath, filePath, submissionID, totalMarks, markingStyle]);
 
-        // First, retrieve the assessmentID using the submissionID
-        const queryAssessmentID = 'SELECT AssessmentID FROM submission WHERE SubmissionID = ?';
-        pool.query(queryAssessmentID, [submissionID], (err, results) => {
-            if (err) {
-                console.log('Database query error:', err);
-                return res.status(500).json({ error: 'Failed to retrieve AssessmentID from the database' });
-            }
+                pythonProcess.stdout.on('data', (data) => {
+                    console.log(`Script output: ${data}`);
+                });
 
-            if (results.length === 0) {
-                return res.status(404).json({ error: 'Submission not found' });
-            }
+                pythonProcess.stderr.on('data', (data) => {
+                    console.error(`Script error: ${data}`);
+                });
 
-            const assessmentID = results[0].AssessmentID;
-
-            // Retrieve TotalMarks using the assessmentID
-            const queryTotalMarks = 'SELECT TotalMark FROM assessment WHERE AssessmentID = ?';
-            pool.query(queryTotalMarks, [assessmentID], (err, results) => {
-                if (err) {
-                    console.log('Database query error:', err);
-                    return res.status(500).json({ error: 'Failed to retrieve TotalMarks from the database' });
-                }
-
-                if (results.length === 0) {
-                    return res.status(404).json({ error: 'Assessment not found' });
-                }
-
-                const totalMarks = results[0].TotalMark;
-                console.log('TotalMarks:', totalMarks);
-
-                // Update the submission with the marked PDF
-                const queryUpdatePDF = 'UPDATE submission SET MarkedSubmissionPDF = ? WHERE SubmissionID = ?';
-                pool.query(queryUpdatePDF, [pdfBuffer, submissionID], (error, results) => {
-                    if (error) {
-                        console.log('Database query error:', error);
-                        return res.status(500).json({ error: 'Failed to upload PDF to database' });
+                pythonProcess.on('close', (code) => {
+                    if (code === 0) {
+                        console.log('Script executed successfully.');
                     } else {
-                        const scriptPath = "C:\\MarkingSymbolRecognition\\main.py";
-                        // Pass submissionID and totalMarks to the Python script
-                        const pythonProcess = spawn('python', [scriptPath, filePath, submissionID, totalMarks]);
-
-                        pythonProcess.stdout.on('data', (data) => {
-                            console.log(`Script output: ${data}`);
-                        });
-
-                        pythonProcess.stderr.on('data', (data) => {
-                            console.error(`Script error: ${data}`);
-                        });
-
-                        pythonProcess.on('close', (code) => {
-                            if (code === 0) {
-                                console.log('Script executed successfully.');
-                            } else {
-                                console.error(`Script exited with code ${code}`);
-                            }
-                        });
-
-                        return res.status(200).json({
-                            message: 'File uploaded and database updated successfully',
-                            submissionID,
-                            filePath
-                        });
+                        console.error(`Script exited with code ${code}`);
                     }
                 });
-            });
+
+                return res.status(200).json({
+                    message: 'File uploaded and database updated successfully',
+                    submissionID,
+                    filePath
+                });
+            }
         });
     });
 });
-
-
 
 /**
  * Route to get a submission PDF

@@ -133,6 +133,7 @@ app.put('/addDemiMarker', markerRoutes.router);
 app.put('/addLecturer', markerRoutes.router);
 app.delete('/deleteMarker', markerRoutes.router);
 app.put('/editLecturer', markerRoutes.router);
+app.put('/updateMarkingStyle', markerRoutes.router);
 
 // Route definitions for module operations
 app.get('/modules', moduleRoutes.router);
@@ -188,6 +189,9 @@ app.post('/sendModeratorEmail', upload.single('csv'), (req, res) => {
             console.log(error);
             res.status(500).send({message: 'Failed to send email', error:error});
         }
-        res.status(200).json({ message: 'Email sent successfully' });
+        else{
+            console.log('Email sent successfully');
+            res.status(200).json({ message: 'Email sent successfully' });
+        }
     });
 });

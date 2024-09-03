@@ -18,14 +18,14 @@ class ClientThreads {
      * @returns {Promise<String|null>} - The role of the marker if login is successful, otherwise null.
      */
     async login(MarkerEmail, Password) {
-        const query = `SELECT MarkerRole FROM marker WHERE MarkerEmail = ? AND Password = ?`;
+        const query = `SELECT MarkerRole, MarkingStyle FROM marker WHERE MarkerEmail = ? AND Password = ?`;
         return new Promise((resolve, reject) => {
             this.pool.query(query, [MarkerEmail, Password], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
                     if (results.length > 0) {
-                        resolve(results[0].MarkerRole);
+                        resolve(results);
                     } else {
                         resolve(null);
                     }
@@ -41,7 +41,7 @@ class ClientThreads {
      */
     async getAssessments(MarkerEmail) {
         const query = `
-            SELECT AssessmentID, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail, AssessmentType 
+            SELECT AssessmentID, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail, AssessmentType, TotalMark 
             FROM assessment 
             WHERE 
                 MarkerEmail LIKE CONCAT('%"', ?, '"%')
@@ -61,7 +61,8 @@ class ClientThreads {
                             numMarked: result.NumSubmissionsMarked,
                             totalSubmissions: result.TotalNumSubmissions,
                             modEmail: result.ModEmail,
-                            assessmentType: result.AssessmentType
+                            assessmentType: result.AssessmentType,
+                            totalMarks: result.TotalMark
                         }));
                         resolve(assessments);
                     } else {
@@ -532,10 +533,10 @@ class ClientThreads {
      * @returns a success message if the lecturer is added successfully
      * @returns an error message if the lecturer already exists
      */
-    async addLecturer(MarkerEmail, Name, Surname, Password, MarkerRole){
+    async addLecturer(MarkerEmail, Name, Surname, Password, MarkerRole, MarkingStyle){
         const query = 'INSERT INTO marker (MarkerEmail, Name, Surname, Password, MarkerRole, MarkingStyle) VALUES (?,?,?,?,?,?)';
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [MarkerEmail, Name, Surname, Password, MarkerRole, 'TickPerMark'], (error, results) => {
+            this.pool.query(query, [MarkerEmail, Name, Surname, Password, MarkerRole, MarkingStyle], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -573,10 +574,10 @@ class ClientThreads {
      * @returns a success message if the lecturer is edited successfully
      * @returns an error message if the lecturer is not found (should never happen, as valid lecturers are only loaded)
      */
-    async editLecturer(MarkerEmail, Name, Surname, Password){
-        const query = 'UPDATE marker SET Name = ?, Surname = ?, Password = ? WHERE MarkerEmail = ?';
+    async editLecturer(MarkerEmail, Name, Surname, Password, MarkingStyle){
+        const query = 'UPDATE marker SET Name = ?, Surname = ?, Password = ?, MarkingStyle = ? WHERE MarkerEmail = ?';
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [Name, Surname, Password, MarkerEmail], (error, results) => {
+            this.pool.query(query, [Name, Surname, Password, MarkingStyle, MarkerEmail], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -586,10 +587,10 @@ class ClientThreads {
         });
     }
 
-    async addDemiMarker(MarkerEmail, Name, Surname, Password, MarkerRole){
+    async addDemiMarker(MarkerEmail, Name, Surname, Password, MarkerRole, MarkerStyle){
         const query = 'INSERT INTO marker (MarkerEmail, Name, Surname, Password, MarkerRole, MarkingStyle) VALUES (?,?,?,?,?,?)';
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [MarkerEmail, Name, Surname, Password, MarkerRole, 'TickPerMark'], (error, results) => {
+            this.pool.query(query, [MarkerEmail, Name, Surname, Password, MarkerRole, MarkerStyle], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -608,10 +609,10 @@ class ClientThreads {
      * @returns a success message if the marker is edited successfully
      * @returns an error message if the marker is not found (should never happen, as valid markers are only loaded)
      */
-    async editMarker(MarkerEmail, Name, Surname, Password){
-        const query = 'UPDATE marker SET Name = ?, Surname = ?, Password = ? WHERE MarkerEmail = ?';
+    async editMarker(MarkerEmail, Name, Surname, Password, MarkingStyle){
+        const query = 'UPDATE marker SET Name = ?, Surname = ?, Password = ?, MarkingStyle = ? WHERE MarkerEmail = ?';
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [Name, Surname, Password, MarkerEmail], (error, results) => {
+            this.pool.query(query, [Name, Surname, Password, MarkingStyle, MarkerEmail], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -690,6 +691,20 @@ class ClientThreads {
                     reject(error);
                 } else {
                     resolve(results);
+                }
+            });
+        });
+    }
+
+    async updateMarkingStyle(markerEmail, markingStyle){
+        const query = 'UPDATE marker SET MarkingStyle = ? WHERE MarkerEmail = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [markingStyle, markerEmail], (error, results) => {
+                if (error) {
+                    console.log(error);
+                    reject(error);
+                } else {
+                    resolve({message: 'Marking style updated successfully'});
                 }
             });
         });

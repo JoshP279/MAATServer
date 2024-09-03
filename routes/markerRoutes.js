@@ -22,9 +22,9 @@ function setClients(clientInstance) {
 router.get('/login', (req, res) => {
     const { MarkerEmail, Password } = req.query;
     clients.login(MarkerEmail, Password)
-        .then(login => {
-            if (login) {
-                res.status(200).json({MarkerRole : login});
+        .then(results => {
+            if (results) {
+                res.status(200).json({MarkerRole : results[0].MarkerRole, MarkingStyle : results[0].MarkingStyle});
             } else {
                 res.status(400).json({ error: 'Invalid username or password' });
             }
@@ -135,8 +135,8 @@ router.get('/demiMarkers', (req, res) =>{
  * @response {json} 500 - Error message if server error
  */
 router.put('/addLecturer', (req, res) => {
-    const { MarkerEmail, Name, Surname, Password} = req.body;
-    clients.addLecturer(MarkerEmail, Name, Surname, Password, 'Lecturer')
+    const { MarkerEmail, Name, Surname, Password, MarkingStyle} = req.body;
+    clients.addLecturer(MarkerEmail, Name, Surname, Password, 'Lecturer', MarkingStyle)
         .then(result => {
             if (result) {
                 res.status(200).json(result);
@@ -180,8 +180,8 @@ router.delete('/deleteMarker', (req, res) => {
  * @response {json} 500 - Error message if server error
  */
 router.put('/editLecturer', (req, res) => {
-    const { MarkerEmail, Name, Surname, Password} = req.query;
-    clients.editLecturer(MarkerEmail, Name, Surname, Password)
+    const { MarkerEmail, Name, Surname, Password, MarkingStyle} = req.body;
+    clients.editLecturer(MarkerEmail, Name, Surname, Password, MarkingStyle)
         .then(result => {
             if (result) {
                 res.status(200).json(result);
@@ -202,9 +202,8 @@ router.put('/editLecturer', (req, res) => {
  * 
  */
 router.put('/addDemiMarker', (req, res) => {
-    const { MarkerEmail, Name, Surname, Password} = req.body;
-    console.log(req.body);
-    clients.addDemiMarker(MarkerEmail, Name, Surname, Password, 'Demi')
+    const { MarkerEmail, Name, Surname, Password, MarkingStyle} = req.body;
+    clients.addDemiMarker(MarkerEmail, Name, Surname, Password, 'Demi', MarkingStyle)
         .then(result => {
             if (result) {
                 res.status(200).json(result);
@@ -227,8 +226,8 @@ router.put('/addDemiMarker', (req, res) => {
  * @response {json} 500 - Error message if server error
  */
 router.put('/editMarker', (req, res) => {
-    const { MarkerEmail, Name, Surname, Password} = req.query;
-    clients.editMarker(MarkerEmail, Name, Surname, Password)
+    const { MarkerEmail, Name, Surname, Password, MarkingStyle} = req.body;
+    clients.editMarker(MarkerEmail, Name, Surname, Password, MarkingStyle)
         .then(result => {
             if (result) {
                 res.status(200).json(result);
@@ -242,4 +241,15 @@ router.put('/editMarker', (req, res) => {
         });
 });
 
+router.put('/updateMarkingStyle', (req, res) => {
+    const { markingStyle, markerEmail } = req.body;
+    clients.updateMarkingStyle(markerEmail, markingStyle)
+        .then(result => {
+            if (result) {
+                res.status(200).json(result);
+            } else {
+                res.status(500).json({ error: 'Failed to update marking style' });
+            }
+        })
+}); 
 module.exports = {router,setClients};
