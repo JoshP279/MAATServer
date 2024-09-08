@@ -329,16 +329,40 @@ class ClientThreads {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         `;
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [LecturerEmail,markerEmailString , AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentType], (error, results) => {
+            this.pool.query(query, [LecturerEmail,markerEmailString , AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentType], async (error, results) => {
+                if (error) {
+                    reject(error);
+                }else{
+                    const assessmentID = results.insertId;
+                    try {
+                        const promises = MarkerEmail.map(markerEmail => this.addAssessmentMarkerEmail(assessmentID, markerEmail));
+                        await Promise.all(promises);
+                        resolve(assessmentID);
+                    } catch (insertError) {
+                        reject(insertError);
+                    }
+                }
+                });
+            });
+        }
+    /**
+     * Adds the marker email and assessment ID to the assessmentmarkers table
+     * @param {int} AssessmentID 
+     * @param {string} MarkerEmail 
+     */
+    async addAssessmentMarkerEmail(AssessmentID, MarkerEmail){
+        console.log(AssessmentID, MarkerEmail);
+        const query = 'INSERT INTO assessmentmarkers (MarkerEmail, AssessmentID) VALUES (?,?)';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [MarkerEmail, AssessmentID], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
-                    resolve(results.insertId);
+                    resolve(results);
                 }
             });
         });
     }
-
     /**
      * Edits an existing assessment in the database.
      * @param {Int} AssessmentID - The ID of the assessment.
@@ -370,7 +394,6 @@ class ClientThreads {
                 if (error) {
                     reject(error);
                 } else {
-                    console.log('assessment edited');
                     resolve(results);
                 }
             });
@@ -650,6 +673,9 @@ class ClientThreads {
         if (!this.deleteSubmissions(AssessmentID)){
             return {error: 'Failed to delete assessment'};
         }
+        if (!this.deleteAssessmentMarkers(AssessmentID)){
+            return {error: 'Failed to delete assessment'};
+        }
         const query = 'DELETE FROM assessment WHERE AssessmentID = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [AssessmentID], (error, results) => {
@@ -657,6 +683,20 @@ class ClientThreads {
                     reject(error);
                 } else {
                     resolve({message: 'Assessment deleted successfully'});
+                }
+            });
+        });
+    }
+
+    deleteAssessmentMarkers(AssessmentID){
+        const query = 'DELETE FROM assessmentmarkers WHERE AssessmentID = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [AssessmentID], (error, results) => {
+                if (error) {
+                    return false;
+                } else {
+                    console.log('deleted assessment markers');
+                    return true;
                 }
             });
         });
