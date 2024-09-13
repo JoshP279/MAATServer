@@ -270,13 +270,14 @@ router.put('/updateSubmission', (req, res) => {
  * @response {json} 500 - Error message if server error
  */
 router.put('/editSubmission', (req, res) => {
+    console.log('Editing submission');
     const submissionInfo = req.body;
     const submissionObject = submissionInfo.SubmissionPDF;
     const submissionBuffer = Buffer.from(Object.values(submissionObject));
+    updateAssessment(submissionInfo.SubmissionID);
     clients.editSubmission(submissionInfo.SubmissionID, submissionBuffer, submissionInfo.StudentNum, submissionInfo.StudentName, submissionInfo.StudentSurname, submissionInfo.SubmissionStatus, submissionInfo.SubmissionFolderName)
         .then(results => {
             if (results) {
-                console.log(submissionInfo.SubmissionID);
                 updateAssessment(submissionInfo.SubmissionID);
                 res.status(200).json({ message: 'Submission edited successfully'});
             } else {

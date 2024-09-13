@@ -50,17 +50,22 @@ const transporter = nodemailer.createTransport({
  * Obtain the IP address of Server
  * @returns the local IP address of the server
  */
-function getLocalIpAddress() {
+function getIPAddress() {
     const interfaces = os.networkInterfaces();
+    let ipAddress = 'localhost';
+
     for (const interfaceName in interfaces) {
         const interfaceInfo = interfaces[interfaceName];
-        for (const iface of interfaceInfo) {
-            if (iface.family === 'IPv4' && !iface.internal) {
-                return iface.address;
+        
+        if (interfaceName.includes('Wi-Fi') || interfaceName.includes('Wireless')) {
+            for (const iface of interfaceInfo) {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    return iface.address; 
+                }
             }
         }
     }
-    return 'localhost';
+    return ipAddress;
 }
 
 
@@ -85,8 +90,8 @@ function establishConnection() {
 
     // Start the server
     app.listen(port, '0.0.0.0', () => {
-        const localIp = getLocalIpAddress(); // Get the local IP address
-        console.log(`Server running on http://${localIp}:${port}`);
+        const ip = getIPAddress(); // Get the IP address
+        console.log(`Server running on http://${ip}:${port}`);
     });
 
     // Handle uncaught exceptions
@@ -118,6 +123,7 @@ app.get('/submissions', submissionRoutes.router);
 app.put('/updateSubmissionStatus', submissionRoutes.router);
 app.put('/uploadMarkedSubmission', submissionRoutes.router);
 app.put('/addSubmission', submissionRoutes.router);
+app.put('/editSubmission', submissionRoutes.router);
 app.put('/updateSubmission', submissionRoutes.router);
 app.get('/markedSubmission', submissionRoutes.router);
 app.put('/updateSubmissionMark', submissionRoutes.router);

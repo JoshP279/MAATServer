@@ -45,10 +45,11 @@ class ClientThreads {
             FROM assessment 
             WHERE 
                 MarkerEmail LIKE CONCAT('%"', ?, '"%')
-            OR LecturerEmail = ?`;
+            OR LecturerEmail = ?
+            OR ModEmail = ?`;
         
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [MarkerEmail, MarkerEmail], (error, results) => {
+            this.pool.query(query, [MarkerEmail, MarkerEmail, MarkerEmail], (error, results) => {
                 if (error) {
                     console.error('SQL Error:', error);
                     reject(error);
@@ -452,6 +453,7 @@ class ClientThreads {
                 if (error) {
                     reject(error);
                 } else {
+                    console.log('Submission edited successfully');
                     resolve(results);
                 }
             });
