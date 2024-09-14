@@ -41,7 +41,7 @@ class ClientThreads {
      */
     async getAssessments(MarkerEmail) {
         const query = `
-            SELECT AssessmentID, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail, AssessmentType, TotalMark 
+            SELECT AssessmentID, LecturerEmail, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail, AssessmentType, TotalMark 
             FROM assessment 
             WHERE 
                 MarkerEmail LIKE CONCAT('%"', ?, '"%')
@@ -57,6 +57,7 @@ class ClientThreads {
                     if (results.length > 0) {
                         const assessments = results.map(result => ({
                             assessmentID: result.AssessmentID,
+                            lecturerEmail: result.LecturerEmail,
                             moduleCode: result.ModuleCode,
                             assessmentName: result.AssessmentName,
                             numMarked: result.NumSubmissionsMarked,
@@ -377,21 +378,103 @@ class ClientThreads {
      * @param {Int} TotalNumSubmissions - The total number of submissions.
      * @returns {Promise<Object>} - The result of the update operation.
      */
-    async editAssessment(AssessmentID, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions){
+    async editAssessmentWithMemo(AssessmentID, MarkerEmail, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark) {
+        const markerEmailString = JSON.stringify(MarkerEmail);
+        const query = `
+            UPDATE assessment 
+            SET MarkerEmail = ?, 
+                AssessmentName = ?, 
+                ModuleCode = ?, 
+                Memorandum = ?, 
+                ModEmail = ?, 
+                TotalMark = ?
+            WHERE AssessmentID = ?
+        `;
+    
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [markerEmailString, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, AssessmentID], async (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    try {
+                        const currentMarkers = await this.getCurrentMarkersForAssessment(AssessmentID);
+    
+                        // Step 2: Identify markers to add and remove
+                        const markersToAdd = MarkerEmail.filter(markerEmail => !currentMarkers.includes(markerEmail));
+                        const markersToRemove = currentMarkers.filter(markerEmail => !MarkerEmail.includes(markerEmail));
+    
+                        // Step 3: Remove markers that are no longer associated
+                        const removePromises = markersToRemove.map(markerEmail => this.removeAssessmentMarkerEmail(AssessmentID, markerEmail));
+                        await Promise.all(removePromises);
+    
+                        // Step 4: Add new markers that were added
+                        const addPromises = markersToAdd.map(markerEmail => this.addAssessmentMarkerEmail(AssessmentID, markerEmail));
+                        await Promise.all(addPromises);
+    
+                        resolve(results);
+                    } catch (markerError) {
+                        reject(markerError);
+                    }
+                }
+            });
+        });
+    }
+    
+    async editAssessment(AssessmentID, MarkerEmail, AssessmentName, ModuleCode, ModEmail, TotalMark) {
         const markerEmailString = JSON.stringify(MarkerEmail);
         const query = `UPDATE assessment 
-                        SET MarkerEmail = ?, 
-                            AssessmentName = ?, 
-                            ModuleCode = ?, 
-                            Memorandum = ?, 
-                            ModEmail = ?, 
-                            TotalMark = ?, 
-                            NumSubmissionsMarked = ?, 
-                            TotalNumSubmissions = ? 
-                        WHERE AssessmentID = ?`;
-
+                                       SET MarkerEmail = ?, 
+                                           AssessmentName = ?, 
+                                           ModuleCode = ?, 
+                                           ModEmail = ?, 
+                                           TotalMark = ? 
+                                       WHERE AssessmentID = ?`;
+    
         return new Promise((resolve, reject) => {
-            this.pool.query(query, [markerEmailString, AssessmentName, ModuleCode, Memorandum, ModEmail, TotalMark, NumSubmissionsMarked, TotalNumSubmissions, AssessmentID], (error, results) => {
+        this.pool.query(query, [markerEmailString, AssessmentName, ModuleCode, ModEmail, TotalMark, AssessmentID], async (error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                try {
+                    const currentMarkers = await this.getCurrentMarkersForAssessment(AssessmentID);
+
+                    const markersToAdd = MarkerEmail.filter(markerEmail => !currentMarkers.includes(markerEmail));
+                    const markersToRemove = currentMarkers.filter(markerEmail => !MarkerEmail.includes(markerEmail));
+
+                    const removePromises = markersToRemove.map(markerEmail => this.removeAssessmentMarkerEmail(AssessmentID, markerEmail));
+                    await Promise.all(removePromises);
+
+                    const addPromises = markersToAdd.map(markerEmail => this.addAssessmentMarkerEmail(AssessmentID, markerEmail));
+                    await Promise.all(addPromises);
+
+                    resolve(results);
+                } catch (markerError) {
+                    reject(markerError);
+                }
+            }
+        });
+    });
+    }
+    
+    async getCurrentMarkersForAssessment(AssessmentID) {
+        const query = `SELECT MarkerEmail FROM assessmentmarkers WHERE AssessmentID = ?`;
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [AssessmentID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    const markerEmails = results.map(row => row.MarkerEmail);
+                    resolve(markerEmails);
+                }
+            });
+        });
+    }
+    
+    // Helper function to remove a marker from the assessment
+    async removeAssessmentMarkerEmail(AssessmentID, MarkerEmail) {
+        const query = `DELETE FROM assessmentmarkers WHERE AssessmentID = ? AND MarkerEmail = ?`;
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [AssessmentID, MarkerEmail], (error, results) => {
                 if (error) {
                     reject(error);
                 } else {
@@ -434,30 +517,46 @@ class ClientThreads {
      * @param {String} SubmissionStatus - The status of the submission.
      * @returns {Promise<Int>} - The ID of the newly added submission.
      */
-    async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, StudentSurname, SubmissionStatus, SubmissionFolderName) {
-        const query = `
-            UPDATE submission 
-            SET 
-                SubmissionPDF = ?, 
-                StudentName = ?, 
-                StudentSurname = ?, 
-                SubmissionStatus = ?, 
-                SubmissionFolderName = ?
-            WHERE 
-                AssessmentID = ? 
-                AND StudentNum = ?;
-        `;
-        
-        return new Promise((resolve, reject) => {
-            this.pool.query(query, [SubmissionPDF, StudentName, StudentSurname, SubmissionStatus, SubmissionFolderName, AssessmentID, StudentNum], (error, results) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    console.log('Submission edited successfully');
-                    resolve(results);
-                }
+   // Function to edit submission in the database
+async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, StudentSurname, SubmissionStatus, SubmissionFolderName) {
+    const query = `
+        UPDATE submission 
+        SET 
+            SubmissionPDF = ?, 
+            StudentName = ?, 
+            StudentSurname = ?, 
+            SubmissionStatus = ?, 
+            SubmissionFolderName = ?
+        WHERE 
+            AssessmentID = ? 
+            AND StudentNum = ?;
+    `;
+
+    let retryCount = 0;
+        try {
+            return await new Promise((resolve, reject) => {
+                this.pool.query(
+                    query,
+                    [SubmissionPDF, StudentName, StudentSurname, SubmissionStatus, SubmissionFolderName, AssessmentID, StudentNum],
+                    (error, results) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            console.log('Submission edited successfully');
+                            resolve(results);
+                        }
+                    }
+                );
             });
-        });
+        } catch (error) {
+            if (error.code === 'ER_LOCK_DEADLOCK' && retryCount < maxRetries) {
+                console.warn(`Deadlock detected. Retrying... (${retryCount + 1}/${maxRetries})`);
+                retryCount++;
+            } else {
+                console.error('Failed to edit submission:', error);
+                throw error;
+            }
+        }
     }
     async updateSubmission(SubmissionID, StudentNum, StudentSurname, SubmissionMark){{
         const query = 'UPDATE submission SET StudentName = ?, StudentSurname = ?, SubmissionMark = ? WHERE SubmissionID = ?';

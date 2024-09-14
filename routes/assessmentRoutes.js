@@ -71,8 +71,8 @@ router.put('/addAssessment', (req, res) => {
 router.put('/editAssessment', (req, res) => {
     const assessmentInfo = req.body;
     const memoObject = assessmentInfo.Memorandum;
-    const memoBuffer = Buffer.from(Object.values(memoObject));
-    clients.editAssessment(assessmentInfo.AssessmentID, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, memoBuffer, assessmentInfo.ModEmail, assessmentInfo.TotalMark, assessmentInfo.NumSubmissionsMarked, assessmentInfo.TotalNumSubmissions)
+    if (memoObject == null){
+        clients.editAssessment(assessmentInfo.AssessmentID, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, assessmentInfo.ModEmail, assessmentInfo.TotalMark)
         .then(results => {
             if (results) {
                 res.status(200).json({ message: 'Assessment edited successfully'});
@@ -84,6 +84,21 @@ router.put('/editAssessment', (req, res) => {
             console.error(error);
             res.status(500).json({ error: 'Server Error' });
         });
+    }else{
+        const memoBuffer = Buffer.from(Object.values(memoObject));
+        clients.editAssessmentWithMemo(assessmentInfo.AssessmentID, assessmentInfo.MarkerEmail, assessmentInfo.AssessmentName, assessmentInfo.ModuleCode, memoBuffer, assessmentInfo.ModEmail, assessmentInfo.TotalMark)
+        .then(results => {
+            if (results) {
+                res.status(200).json({ message: 'Assessment edited successfully'});
+            } else {
+                res.status(404).json({ error: 'No assessments found' });
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        });
+    }
     });
 
 /**

@@ -269,25 +269,35 @@ router.put('/updateSubmission', (req, res) => {
  * @response {json} 404 - Error message if failed to edit submission
  * @response {json} 500 - Error message if server error
  */
-router.put('/editSubmission', (req, res) => {
-    console.log('Editing submission');
-    const submissionInfo = req.body;
-    const submissionObject = submissionInfo.SubmissionPDF;
-    const submissionBuffer = Buffer.from(Object.values(submissionObject));
-    updateAssessment(submissionInfo.SubmissionID);
-    clients.editSubmission(submissionInfo.SubmissionID, submissionBuffer, submissionInfo.StudentNum, submissionInfo.StudentName, submissionInfo.StudentSurname, submissionInfo.SubmissionStatus, submissionInfo.SubmissionFolderName)
-        .then(results => {
-            if (results) {
-                updateAssessment(submissionInfo.SubmissionID);
-                res.status(200).json({ message: 'Submission edited successfully'});
-            } else {
-                res.status(404).json({ error: 'Failed to edit submission' });
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            res.status(500).json({ error: 'Server Error' });
-        });
+router.put('/editSubmission', async (req, res) => {
+    try {
+        console.log('Editing submission');
+        const submissionInfo = req.body;
+        const submissionObject = submissionInfo.SubmissionPDF;
+        const submissionBuffer = Buffer.from(Object.values(submissionObject)); // Ensure object is formatted correctly
+
+        // Attempt to edit the submission
+        const results = await clients.editSubmission(
+            submissionInfo.SubmissionID,
+            submissionBuffer,
+            submissionInfo.StudentNum,
+            submissionInfo.StudentName,
+            submissionInfo.StudentSurname,
+            submissionInfo.SubmissionStatus,
+            submissionInfo.SubmissionFolderName
+        );
+
+        // If successful, update the assessment and send response
+        if (results) {
+            updateAssessment(submissionInfo.SubmissionID);
+            res.status(200).json({ message: 'Submission edited successfully' });
+        } else {
+            res.status(404).json({ error: 'Failed to edit submission' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server Error' });
+    }
 });
 /**
  * Route to get a marked submission PDF
