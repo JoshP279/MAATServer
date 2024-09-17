@@ -99,7 +99,7 @@ function establishConnection() {
         console.error('There was an uncaught error', err);
     });
 }
-
+``
 establishConnection();
 
 // Middleware to log incoming requests
