@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const { file } = require('jszip');
+const { Console } = require('console');
 const projectRoot = process.cwd();
 const uploadsDir = path.join(projectRoot, 'uploads');
 const storage = multer.memoryStorage();
@@ -35,30 +36,29 @@ function setClientsAndPool(clientInstance, poolInstance) {
  */
 function updateAssessment(submissionID) {
     const updateAssessmentQuery = `
-    UPDATE assessment
-    SET TotalNumSubmissions = (
-        SELECT COUNT(*) FROM submission WHERE AssessmentID = (
-            SELECT AssessmentID FROM submission WHERE SubmissionID = ?
+    UPDATE assessment a
+    INNER JOIN submission s ON a.AssessmentID = s.AssessmentID
+    SET 
+        TotalNumSubmissions = (
+            SELECT COUNT(*) FROM submission WHERE AssessmentID = s.AssessmentID
+        ),
+        NumSubmissionsMarked = (
+            SELECT COUNT(*) FROM submission WHERE AssessmentID = s.AssessmentID AND SubmissionStatus = 'Marked'
         )
-    ),
-    NumSubmissionsMarked = (
-        SELECT COUNT(*) FROM submission WHERE AssessmentID = (
-            SELECT AssessmentID FROM submission WHERE SubmissionID = ?
-        ) AND SubmissionStatus = 'Marked'
-    )
-    WHERE AssessmentID = (
-        SELECT AssessmentID FROM submission WHERE SubmissionID = ?
-    );`;
+    WHERE s.SubmissionID = ?`;
 
-    pool.query(updateAssessmentQuery, [submissionID, submissionID, submissionID], (error) => {
-        if (error) {
-            return false;
-        }
-        return true;
+    return new Promise((resolve, reject) => {
+        pool.query(updateAssessmentQuery, [submissionID], (error, results) => {
+            if (error) {
+                console.error('Error updating assessment:', error);
+                reject(error);
+            } else {
+                resolve(true);
+            }
+        });
     });
-
-    return true;
 }
+
 
 
 /**
@@ -71,26 +71,40 @@ function updateAssessment(submissionID) {
  * @response {json} 500 - Error message if database error 
  * The submission status is updated in the database
  */
-router.put('/updateSubmissionStatus', (req, res) => {
+router.put('/updateSubmissionStatus', async (req, res) => {
     let { submissionID, submissionStatus } = req.body;
     if (!submissionID || !submissionStatus) {
         submissionID = req.query.submissionID;
         submissionStatus = req.query.submissionStatus;
     }
+
     const updateSubmissionQuery = 'UPDATE submission SET SubmissionStatus = ? WHERE SubmissionID = ?';
+
     pool.query(updateSubmissionQuery, [submissionStatus, submissionID], (error, results) => {
         if (error) {
+            console.log('Failed to update submission status:', error);
             return res.status(500).json({ error: 'Failed to update submission status' });
         }
 
         if (results.affectedRows === 0) {
+            console.log('Submission not found');
             return res.status(404).json({ error: 'Submission not found' });
         }
 
-        if (updateAssessment(submissionID)) {
-            res.status(200).json({ message: 'Submission status updated and assessment counts updated successfully' });
+        if (submissionStatus === 'Marked' || submissionStatus === 'Unmarked') {
+            updateAssessment(submissionID).then(assessmentUpdated => {
+                if (assessmentUpdated) {
+                    return res.status(200).json({ message: 'Submission status and assessment counts updated successfully' });
+                } else {
+                    console.log('Failed to update assessment counts');
+                    return res.status(500).json({ error: 'Failed to update assessment counts' });
+                }
+            }).catch(error => {
+                console.log('Failed to update assessment:', error);
+                return res.status(500).json({ error: 'Failed to update assessment counts' });
+            });
         } else {
-            return res.status(500).json({ error: 'Failed to update assessment status' });
+            return res.status(200).json({ message: 'Submission status updated successfully' });
         }
     });
 });
@@ -325,6 +339,7 @@ router.get('/markedSubmission', (req, res) => {
 });
 
 router.put('/updateSubmissionMark', (req, res) => {
+    console.log(req.body);
     const submissionID = req.body.submissionID;
     const totalMark = req.body.totalMark;
     clients.updateSubmissionMark(submissionID, totalMark)
