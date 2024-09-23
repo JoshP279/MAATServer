@@ -14,7 +14,6 @@ const upload = multer();
 const app = express();
 const port = 3306;
 
-
 // Middleware setup
 app.use(cors());
 app.use(bodyParser.json({ limit: '100mb' }));
