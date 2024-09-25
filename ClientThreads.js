@@ -850,5 +850,60 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
             });
         });
     }
-}
+
+    async handleQuestionPerMark(SubmissionID, QuestionText, QuestionMark) {
+        const selectQuery = `
+            SELECT * FROM question WHERE SubmissionID = ? AND QuestionText = ?
+        `;
+        
+        return new Promise((resolve, reject) => {
+            this.pool.query(selectQuery, [SubmissionID, QuestionText], (error, results) => {
+                if (error) {
+                    return reject(error);
+                }
+                if (results.length > 0) {
+                    const updateQuery = `
+                        UPDATE question SET MarkAllocation = ? WHERE SubmissionID = ? AND QuestionText = ?
+                    `;
+                    this.pool.query(updateQuery, [QuestionMark, SubmissionID, QuestionText], (error, updateResults) => {
+                        if (error) {
+                            return reject(error);
+                        }
+                        resolve(updateResults);
+                    });
+                } else {
+                    // Step 2b: If record does not exist, perform the insert
+                    const insertQuery = `
+                        INSERT INTO question (SubmissionID, QuestionText, MarkAllocation) 
+                        VALUES (?, ?, ?)
+                    `;
+                    this.pool.query(insertQuery, [SubmissionID, QuestionText, QuestionMark], (error, insertResults) => {
+                        if (error) {
+                            return reject(error);
+                        }
+                        resolve(insertResults);
+                    });
+                }
+            });
+        });
+    }
+
+    async questionPerMark(SubmissionID){
+        const query = `
+        SELECT QuestionText, MarkAllocation 
+        FROM question 
+        WHERE SubmissionID = ?
+        ORDER BY QuestionID ASC
+    `;
+    
+    return new Promise((resolve, reject) => {
+        this.pool.query(query, [SubmissionID], (error, results) => {
+            if (error) {
+                return reject(error);
+            }
+            resolve(results);
+        });
+    });
+    }
+}    
 module.exports = ClientThreads

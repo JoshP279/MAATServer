@@ -339,7 +339,6 @@ router.get('/markedSubmission', (req, res) => {
 });
 
 router.put('/updateSubmissionMark', (req, res) => {
-    console.log(req.body);
     const submissionID = req.body.submissionID;
     const totalMark = req.body.totalMark;
     clients.updateSubmissionMark(submissionID, totalMark)

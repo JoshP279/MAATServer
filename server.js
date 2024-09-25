@@ -25,6 +25,7 @@ const assessmentRoutes = require('./routes/assessmentRoutes');
 const markerRoutes = require('./routes/markerRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
 const moduleRoutes = require('./routes/moduleRoutes');
+const questionRoutes = require('./routes/questionRoutes');
 const ClientThreads = require('./ClientThreads');
 
 // Configuring MYSQL connection pool
@@ -85,6 +86,7 @@ function establishConnection() {
             assessmentRoutes.setClients(clients);
             submissionRoutes.setClientsAndPool(clients, pool);
             moduleRoutes.setClients(clients);
+            questionRoutes.setClients(clients);
             connection.release();
         }
     });
@@ -148,6 +150,9 @@ app.put('/addModule', moduleRoutes.router);
 app.delete('/deleteModule', moduleRoutes.router);
 app.put('/editModule', moduleRoutes.router);
 
+//Route definitions for question operations
+app.put('/updateQuestionMark', questionRoutes.router)
+app.get('/questionPerMark', questionRoutes.router);
 // Route for sending emails to students
 app.post('/sendStudentEmail', (req, res) => {
     const { to, subject, text, pdfData } = req.body;
@@ -169,7 +174,10 @@ app.post('/sendStudentEmail', (req, res) => {
         if (error) {
             res.status(500).send({message: 'Failed to send email', error:error});
         }
-        res.status(200).json({ message: 'Email sent successfully' });
+        else{
+            console.log(`Email sent successfully to ${to}`);
+            res.status(200).json({ message: 'Email sent successfully' });
+        }
     });
 });
 
@@ -197,7 +205,7 @@ app.post('/sendModeratorEmail', upload.single('csv'), (req, res) => {
             res.status(500).send({message: 'Failed to send email', error:error});
         }
         else{
-            console.log('Email sent successfully');
+            console.log(`Email sent successfully to ${to}`);
             res.status(200).json({ message: 'Email sent successfully' });
         }
     });
