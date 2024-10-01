@@ -10,6 +10,11 @@ function setClients(clientInstance) {
     clients = clientInstance;
 }
 
+/**
+ * Route for adding a question to the database
+ * @param {String} Question - question to be added
+ * @param {String} MarkAllocation - mark allocation for the question
+ */
 router.put('/updateQuestionMark', (req, res) => {
     console.log(req.body);
     const { submissionID, questionID,markAllocation} = req.body;
@@ -27,6 +32,12 @@ router.put('/updateQuestionMark', (req, res) => {
         });
 });
 
+/**
+ * Route for getting question marks for a submission
+ * @param {String} SubmissionID - ID of the submission
+ * @returns {Object} - JSON object containing question marks
+ * @throws {Object} - JSON object containing error message
+ */
 router.get('/questionPerMark', (req, res) => {
     const submissionID = req.query.SubmissionID;
     console.log(submissionID);
