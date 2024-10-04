@@ -904,6 +904,52 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
             resolve(results);
         });
     });
+}
+async updateSubmissionsMarks(assessmentID, oldMark, newMark) {
+    const submissions = await this.getSubmissions(assessmentID);
+
+    submissions.forEach(submission => {
+        console.log('SubmissionMark:', submission.submissionMark);
+        console.log('OldMark:', oldMark);
+        
+        const percentage = submission.submissionMark / oldMark;
+        console.log("Percentage based on old mark: ", percentage);
+        
+        const newMarkForSubmission = Math.round(percentage * newMark,2);
+        console.log("New Mark before clamping: ", newMarkForSubmission);
+        
+        const clampedNewMark = Math.min(newMark, Math.max(0, 100));
+        console.log("Clamped New Mark: ", clampedNewMark);
+
+        this.updateSubmissionMark(submission.submissionID, clampedNewMark);
+    });
+
+    console.log("All submissions updated successfully");
+}
+    async getSubmissionsByAssessmentID(assessmentID) {
+        const query = `SELECT SubmissionID, SubmissionMark FROM submission WHERE assessmentID = ?`;
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [assessmentID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
+    }
+    
+    async updateSubmissionMark(submissionID, newMark) {
+        const query = `UPDATE submission SET SubmissionMark = ? WHERE SubmissionID = ?`;
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [newMark, submissionID], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(results);
+                }
+            });
+        });
     }
 }    
 module.exports = ClientThreads
