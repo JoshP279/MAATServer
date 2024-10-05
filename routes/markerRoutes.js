@@ -159,7 +159,6 @@ router.put('/addLecturer', (req, res) => {
  */
 router.delete('/deleteMarker', (req, res) => {
     const { MarkerEmail } = req.query;
-    console.log(MarkerEmail);
     clients.deleteMarker(MarkerEmail)
         .then(result => {
             if (result) {

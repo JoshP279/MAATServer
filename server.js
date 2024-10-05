@@ -12,7 +12,7 @@ const upload = multer();
 
 // Initialise the express application
 const app = express();
-const port = 3306;
+const port = 8080;
 
 
 // Middleware setup
@@ -155,15 +155,15 @@ app.put('/updateQuestionMark', questionRoutes.router)
 app.get('/questionPerMark', questionRoutes.router);
 // Route for sending emails to students
 app.post('/sendStudentEmail', (req, res) => {
-    const { to, subject, text, pdfData } = req.body;
+    const { to, subject, text, pdfData, filename} = req.body;
     const mailOptions = {
         from: 'maatautomailer@gmail.com',
-        to,
+        to: 's224046136@mandela.ac.za',
         subject,
         text,
         attachments: [
             {
-                filename: 'marked_submission.pdf',
+                filename: filename,
                 content: Buffer.from(pdfData.data),
                 contentType: 'application/pdf'
             }
@@ -192,7 +192,7 @@ app.post('/sendModeratorEmail', upload.single('csv'), (req, res) => {
         text,
         attachments: [
             {
-                filename: 'assessment_results.csv',
+                filename: req.file.originalname,
                 content: csvBuffer,
                 contentType: 'application/csv'
             }
@@ -202,6 +202,34 @@ app.post('/sendModeratorEmail', upload.single('csv'), (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
             console.log(error);
+            res.status(500).send({message: 'Failed to send email', error:error});
+        }
+        else{
+            console.log(`Email sent successfully to ${to}`);
+            res.status(200).json({ message: 'Email sent successfully' });
+        }
+    });
+});
+
+app.post('/sendModeratorZipEmail', upload.single('zip'), (req, res) => {
+    const {to, subject, text, filename} = req.body;
+    const zipBuffer = req.file.buffer;
+    const mailOptions = {
+        from: 'maatautomailer@gmail.com',
+        to,
+        subject,
+        text,
+        attachments: [
+            {
+                filename: filename,
+                content: zipBuffer,
+                contentType: 'application/zip'
+            }
+        ]
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
             res.status(500).send({message: 'Failed to send email', error:error});
         }
         else{

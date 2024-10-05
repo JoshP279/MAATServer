@@ -82,7 +82,7 @@ class ClientThreads {
      */
     async getAllAssessments() {
         const query = `
-            SELECT AssessmentID, ModuleCode, AssessmentName, NumSubmissionsMarked, TotalNumSubmissions, ModEmail 
+            SELECT AssessmentID, ModuleCode, AssessmentName, LecturerEmail, NumSubmissionsMarked, TotalNumSubmissions, ModEmail 
             FROM assessment`;
         return new Promise((resolve, reject) => {
             this.pool.query(query, (error, results) => {
@@ -95,6 +95,7 @@ class ClientThreads {
                             assessmentID: result.AssessmentID,
                             moduleCode: result.ModuleCode,
                             assessmentName: result.AssessmentName,
+                            lecturerEmail: result.LecturerEmail,
                             numMarked: result.NumSubmissionsMarked,
                             totalSubmissions: result.TotalNumSubmissions,
                             modEmail: result.ModEmail
@@ -670,25 +671,101 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
         });
     }
 
+
     /**
-     * Deletes a lecturer from the database.
+ * Deletes a lecturer from the database.
+ * @param {String} MarkerEmail 
+ * @returns {Promise} A success message if the lecturer is deleted successfully, or an error message otherwise.
+ */
+    async deleteMarker(MarkerEmail) {
+        try {
+            const assessmentMarkersDeleted = await this.deleteAssessmentMarkersEmail(MarkerEmail);
+            const markersFromTableDeleted = await this.deleteMarkersFromAssessmentTable(MarkerEmail);
+    
+            if (assessmentMarkersDeleted && markersFromTableDeleted) {
+                const query = 'DELETE FROM marker WHERE MarkerEmail = ?';
+                return new Promise((resolve, reject) => {
+                    this.pool.query(query, [MarkerEmail], (error, results) => {
+                        if (error) {
+                            reject(new Error('Failed to delete Marker from marker table'));
+                        } else {
+                            resolve({message: 'Lecturer deleted successfully'});
+                        }
+                    });
+                });
+            } else {
+                return {error: 'Failed to delete Marker'};
+            }
+        } catch (error) {
+            return {error: 'An error occurred while deleting Marker: ' + error.message};
+        }
+    }
+    
+    /**
+     * Deletes assessment marker entries with a specific MarkerEmail.
      * @param {String} MarkerEmail 
-     * @returns a success message if the lecturer is deleted successfully
-     * @returns an error message if the lecturer is not found (should never happen, as valid lecturers are only loaded)
+     * @returns {Promise<boolean>} Returns true if deletion was successful.
      */
-    async deleteMarker(MarkerEmail){
-        const query = 'DELETE FROM marker WHERE MarkerEmail = ?';
+    async deleteAssessmentMarkersEmail(MarkerEmail){
+        const query = 'DELETE FROM assessmentmarkers WHERE MarkerEmail = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [MarkerEmail], (error, results) => {
                 if (error) {
-                    reject(error);
+                    console.error('Error deleting from assessmentmarkers:', error.message);
+                    reject(false);
                 } else {
-                    resolve({message: 'Lecturer deleted successfully'});
+                    console.log('Deleted assessment markers');
+                    resolve(true);
                 }
             });
         });
     }
-
+    
+    /**
+     * Updates marker emails in the assessmentmarkers table by removing the specified MarkerEmail.
+     * @param {String} markerEmail 
+     * @returns {Promise<boolean>} Returns true if the operation is successful.
+     */
+    async deleteMarkersFromAssessmentTable(markerEmail) {
+        const selectQuery = 'SELECT AssessmentID, MarkerEmail FROM assessment WHERE MarkerEmail LIKE ?';
+        
+        return new Promise(async (resolve, reject) => {
+            try {
+                const entries = await new Promise((resolve, reject) => {
+                    this.pool.query(selectQuery, [`%${markerEmail}%`], (error, results) => {
+                        if (error) {
+                            return reject(error);
+                        }
+                        resolve(results);
+                    });
+                });
+    
+                for (const entry of entries) {
+                    const assessmentID = entry.AssessmentID;
+                    let emailArray = JSON.parse(entry.MarkerEmail);
+                    
+                    emailArray = emailArray.filter((email) => email !== markerEmail);
+                    const updatedEmails = JSON.stringify(emailArray);
+                    console.log('Updated emails:', updatedEmails);
+                    const updateQuery = 'UPDATE assessment SET MarkerEmail = ? WHERE AssessmentID = ?';
+                    await new Promise((resolve, reject) => {
+                        this.pool.query(updateQuery, [updatedEmails, assessmentID], (error, result) => {
+                            if (error) {
+                                return reject(error);
+                            }
+                            resolve(result);
+                        });
+                    });
+                }
+    
+                resolve(true);
+            } catch (error) {
+                console.error('Error in deleteMarkersFromAssessmentTable:', error.message);
+                reject(false);
+            }
+        });
+    }
+    
     /**
      * Edits a lecturer in the database.
      * @param {String} MarkerEmail 
@@ -905,23 +982,15 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
         });
     });
 }
-async updateSubmissionsMarks(assessmentID, oldMark, newMark) {
+async updateSubmissionsMarks(assessmentID, oldAssessmentMark, newAssessmentMark) {
     const submissions = await this.getSubmissions(assessmentID);
-
     submissions.forEach(submission => {
-        console.log('SubmissionMark:', submission.submissionMark);
-        console.log('OldMark:', oldMark);
-        
-        const percentage = submission.submissionMark / oldMark;
-        console.log("Percentage based on old mark: ", percentage);
-        
-        const newMarkForSubmission = Math.round(percentage * newMark,2);
-        console.log("New Mark before clamping: ", newMarkForSubmission);
-        
-        const clampedNewMark = Math.min(newMark, Math.max(0, 100));
-        console.log("Clamped New Mark: ", clampedNewMark);
-
-        this.updateSubmissionMark(submission.submissionID, clampedNewMark);
+        const mark = submission.submissionMark * oldAssessmentMark / 100;
+        const newMark = mark / newAssessmentMark * 100;
+        const clampedNewMark = Math.min(Math.max(0, newMark), 100);
+        const roundedNewMark = Math.round(clampedNewMark * 100) / 100;
+        console.log(`Updating submission ${submission.submissionID} from ${submission.submissionMark} to ${roundedNewMark}`);
+        this.updateSubmissionMark(submission.submissionID, roundedNewMark);
     });
 
     console.log("All submissions updated successfully");

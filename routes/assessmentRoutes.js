@@ -77,7 +77,6 @@ router.put('/editAssessment', (req, res) => {
         .then(results => {
             if (results) {
                 if (oldMark != assessmentInfo.TotalMark){
-                    //update each submission mark in the submissions table
                     clients.updateSubmissionsMarks(assessmentInfo.AssessmentID, oldMark, assessmentInfo.TotalMark)
                 }
                 res.status(200).json({ message: 'Assessment edited successfully'});
