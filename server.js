@@ -216,7 +216,7 @@ app.post('/sendModeratorZipEmail', upload.single('zip'), (req, res) => {
     const zipBuffer = req.file.buffer;
     const mailOptions = {
         from: 'maatautomailer@gmail.com',
-        to,
+        to: 's224046136@mandela.ac.za',
         subject,
         text,
         attachments: [
