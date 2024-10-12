@@ -251,4 +251,16 @@ router.put('/updateMarkingStyle', (req, res) => {
             }
         })
 }); 
+
+router.put('/updatePassword', (req, res) => {
+    const {markerEmail, password} = req.body;
+    clients.updatePassword(markerEmail, password)
+        .then(result => {
+            if (result) {
+                res.status(200).json(result);
+            } else {
+                res.status(500).json({ error: 'Failed to update password' });
+            }
+        })
+}); 
 module.exports = {router,setClients};

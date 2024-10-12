@@ -143,7 +143,7 @@ app.put('/addLecturer', markerRoutes.router);
 app.delete('/deleteMarker', markerRoutes.router);
 app.put('/editLecturer', markerRoutes.router);
 app.put('/updateMarkingStyle', markerRoutes.router);
-
+app.put('/updatePassword', markerRoutes.router);
 // Route definitions for module operations
 app.get('/modules', moduleRoutes.router);
 app.put('/addModule', moduleRoutes.router);

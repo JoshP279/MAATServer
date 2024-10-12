@@ -1020,5 +1020,18 @@ async updateSubmissionsMarks(assessmentID, oldAssessmentMark, newAssessmentMark)
             });
         });
     }
+
+    async updatePassword(MarkerEmail, Password){
+        const query = 'UPDATE marker SET Password = ? WHERE MarkerEmail = ?';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [Password, MarkerEmail], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve({message: 'Password updated successfully'});
+                }
+            });
+        });
+    }
 }    
 module.exports = ClientThreads
