@@ -829,13 +829,14 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
      * @returns an error message if the assessment is not found (should never happen, as valid assessments are only loaded)
      */
     deleteSubmissions(AssessmentID){
+        console.log('Deleting submissions');
         const query = 'DELETE FROM submission WHERE AssessmentID = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [AssessmentID], (error, results) => {
                 if (error) {
-                    return false
+                    resolve(false);
                 } else {
-                    return true
+                    resolve(true);
                 }
             });
         });
@@ -848,12 +849,10 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
      * @returns an error message if the assessment is not found (should never happen, as valid assessments are only loaded)
      */
     async deleteAssessment(AssessmentID){
-        if (!this.deleteSubmissions(AssessmentID)){
-            return {error: 'Failed to delete assessment'};
-        }
-        if (!this.deleteAssessmentMarkers(AssessmentID)){
-            return {error: 'Failed to delete assessment'};
-        }
+        const deleteSubmissions = await this.deleteSubmissions(AssessmentID);
+        const deleteMarkers = await this.deleteAssessmentMarkers(AssessmentID);
+        if (deleteSubmissions && deleteMarkers){
+            console.log('deleted submissions');
         const query = 'DELETE FROM assessment WHERE AssessmentID = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [AssessmentID], (error, results) => {
@@ -864,17 +863,20 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
                 }
             });
         });
+    }else{
+        return {error: 'Failed to delete assessment'};
     }
+}
 
     deleteAssessmentMarkers(AssessmentID){
         const query = 'DELETE FROM assessmentmarkers WHERE AssessmentID = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [AssessmentID], (error, results) => {
                 if (error) {
-                    return false;
+                    resolve(false);
                 } else {
                     console.log('deleted assessment markers');
-                    return true;
+                    resolve(true);
                 }
             });
         });
