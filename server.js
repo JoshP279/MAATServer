@@ -158,7 +158,7 @@ app.post('/sendStudentEmail', (req, res) => {
     const { to, subject, text, pdfData, filename} = req.body;
     const mailOptions = {
         from: 'maatautomailer@gmail.com',
-        to: 's224046136@mandela.ac.za',
+        to,
         subject,
         text,
         attachments: [
