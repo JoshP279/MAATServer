@@ -828,12 +828,22 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
      * @returns a success message if the assessment is deleted successfully
      * @returns an error message if the assessment is not found (should never happen, as valid assessments are only loaded)
      */
-    deleteSubmissions(AssessmentID){
+    async deleteSubmissions(AssessmentID) {
         console.log('Deleting submissions');
+        
+        // Step 1: Delete related questions first
+        const questionsDeleted = await this.deleteQuestions(AssessmentID);
+        if (!questionsDeleted) {
+            console.error('Failed to delete questions, aborting deletion of submissions');
+            return false; // Abort if question deletion fails
+        }
+    
+        // Step 2: Delete submissions if questions are deleted successfully
         const query = 'DELETE FROM submission WHERE AssessmentID = ?';
         return new Promise((resolve, reject) => {
             this.pool.query(query, [AssessmentID], (error, results) => {
                 if (error) {
+                    console.error('Error deleting submissions:', error);
                     resolve(false);
                 } else {
                     resolve(true);
@@ -841,6 +851,23 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
             });
         });
     }
+    
+    async deleteQuestions(AssessmentID) {
+        console.log('Deleting questions');
+        
+        const query = 'DELETE FROM question WHERE SubmissionID IN (SELECT SubmissionID FROM submission WHERE AssessmentID = ?)';
+        return new Promise((resolve, reject) => {
+            this.pool.query(query, [AssessmentID], (error, results) => {
+                if (error) {
+                    console.error('Error deleting questions:', error);
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+    }
+    
     /**
      * Method to delete an assessment
      * First attempts to delete all submissions, then proceeds to delete an assessment
@@ -859,6 +886,7 @@ async editSubmission(AssessmentID, SubmissionPDF, StudentNum, StudentName, Stude
                 if (error) {
                     reject(error);
                 } else {
+                    console.log('deleted assessment');
                     resolve({message: 'Assessment deleted successfully'});
                 }
             });

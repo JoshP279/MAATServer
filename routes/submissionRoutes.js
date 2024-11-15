@@ -166,7 +166,8 @@ router.put('/uploadMarkedSubmission', upload.single('pdfFile'), (req, res) => {
                 return res.status(500).json({ error: 'Failed to upload PDF to database' });
             } else {
                 // const scriptPath = "C:\\MarkingSymbolRecognition\\main.py"; honours lab pc
-                const scriptPath = "C:\\Users\\Joshua\\MarkingSymbolRecognition\\main.py"
+                // const scriptPath = "C:\\Users\\Joshua\\MarkingSymbolRecognition\\main.py"
+                const scriptPath = "C:\\Users\\Josh\\MarkingSymbolRecognition\\main.py"
                 const pythonProcess = spawn('python', [scriptPath, filePath, submissionID, totalMarks, markingStyle]);
 
                 pythonProcess.stdout.on('data', (data) => {
